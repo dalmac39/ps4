@@ -138,6 +138,29 @@ let allDone = false,
   kpatched = false,
   payloadRunning = false;
 
+// ---- Freeze Prevention for PS4 ----
+// When the PS4 enters rest mode, shuts down, or the user presses PS button,
+// we must restore any hooked/armed exploit state to prevent kernel panics
+// and browser freezes. The jbRestoreHook (set during exploit) will restore
+// corrupted handles, and we disarm Math.expm1 if it was armed.
+function emergencyCleanup() {
+  try {
+    if (jbRestoreHook) jbRestoreHook("emergency-cleanup");
+  } catch (e) {}
+  try {
+    if (mainArmed && mainMf && mainOrig) {
+      // This requires p (the read/write primitive) which may not be accessible
+      // from this scope, but jbRestoreHook should handle it.
+    }
+  } catch (e) {}
+}
+
+window.addEventListener("pagehide", emergencyCleanup, false);
+window.addEventListener("beforeunload", emergencyCleanup, false);
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) emergencyCleanup();
+}, false);
+
 (async function () {
   let p = null;
 

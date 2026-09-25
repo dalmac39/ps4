@@ -754,7 +754,7 @@
             <!-- Auto-Close Countdown Box -->
             <div class="auto-close-box" id="auto-close-box">
               <div class="auto-close-text" id="auto-close-text">
-                جاري إغلاق المتصفح تلقائياً خلال <span id="auto-close-sec" style="color:#00e5ff; font-weight:900;">3</span> ثوانٍ...
+                جاري إغلاق الصفحة تلقائياً خلال <span id="auto-close-sec" style="color:#00e5ff; font-weight:900;">3</span> ثوانٍ...
               </div>
               <div class="close-bar-wrap">
                 <div class="close-bar" id="close-bar"></div>
@@ -762,7 +762,7 @@
             </div>
 
             <div class="hud-btn-group">
-              <button type="button" class="btn-cyber primary" id="btn-close-now">إغلاق المتصفح الآن (زر PS)</button>
+              <button type="button" class="btn-cyber primary" id="btn-close-now">إغلاق الصفحة الآن (زر PS)</button>
               <button type="button" class="btn-cyber secondary" id="btn-cancel-close">إلغاء الإغلاق</button>
               <a href="index.html" class="btn-cyber secondary">الرئيسية</a>
             </div>
@@ -843,14 +843,21 @@
           setTimeout(function() { playTone(180, 0.3, 'sawtooth'); }, 180);
         }
 
-        // PS4 Browser Auto-Close Functionality
+        // PS4 Browser Page-Close Functionality
+        // Instead of window.close() which kills the entire PS4 browser app,
+        // navigate to about:blank to just close the page and stay in the browser.
         function closePs4Browser() {
           try {
-            // Closes User's Guide (دليل المستخدم) or Web Browser on PS4
-            window.close();
-            window.open('', '_self', '');
-            window.close();
-          } catch(e) {}
+            // Clean up all running timers, animations, and audio first
+            cleanupAll();
+            // Navigate to blank page — this closes the JB page 
+            // without exiting the PS4 browser application entirely.
+            // The user can then press the PS button to go back to their game.
+            window.location.replace('about:blank');
+          } catch(e) {
+            // Fallback: try navigating to the home page
+            try { window.location.href = 'index.html'; } catch(e2) {}
+          }
         }
 
         var closeSec = 3;
@@ -860,6 +867,72 @@
         var closeTextEl = document.getElementById('auto-close-text');
         var btnCloseNow = document.getElementById('btn-close-now');
         var btnCancelClose = document.getElementById('btn-cancel-close');
+
+        // ---- Freeze Prevention: Cleanup all resources ----
+        // This prevents the PS4 from freezing when entering rest mode,
+        // shutting down, or when the browser is suspended by the system.
+        var allTimers = [];
+        var animFrameId = null;
+        var isCleanedUp = false;
+
+        function cleanupAll() {
+          if (isCleanedUp) return;
+          isCleanedUp = true;
+
+          // Stop auto-close timer
+          if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
+
+          // Stop all stage progression timers
+          if (typeof timer1 !== 'undefined') clearTimeout(timer1);
+          if (typeof timer2 !== 'undefined') clearTimeout(timer2);
+          if (typeof timer3 !== 'undefined') clearTimeout(timer3);
+
+          // Stop gamepad polling
+          if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+
+          // Stop MutationObserver
+          if (typeof observer !== 'undefined' && observer) {
+            try { observer.disconnect(); } catch(e) {}
+          }
+
+          // Close AudioContext to prevent audio resource leaks
+          if (audioCtx) {
+            try { audioCtx.close(); } catch(e) {}
+            audioCtx = null;
+          }
+
+          // Stop all CSS animations to reduce GPU/CPU load
+          try {
+            document.querySelectorAll('*').forEach(function(el) {
+              el.style.animationPlayState = 'paused';
+            });
+          } catch(e) {}
+        }
+
+        // Listen for page hide (user switches app, presses PS button, etc.)
+        window.addEventListener('pagehide', function() {
+          cleanupAll();
+        }, false);
+
+        // Listen for visibility changes (PS4 suspending browser, rest mode, etc.)
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden || document.visibilityState === 'hidden') {
+            cleanupAll();
+          }
+        }, false);
+
+        // Listen for beforeunload (page navigation, browser closing)
+        window.addEventListener('beforeunload', function() {
+          cleanupAll();
+        }, false);
+
+        // Freeze detection: if the page is frozen (e.g., entering rest mode)
+        // the 'freeze' event fires on supported browsers
+        if ('onfreeze' in document) {
+          document.addEventListener('freeze', function() {
+            cleanupAll();
+          }, false);
+        }
 
         function startAutoCloseTimer() {
           closeSec = 3;
@@ -1002,6 +1075,7 @@
         // DualShock 4 Controller Input in Execution Window
         var lastButtons = {};
         function pollGamepad() {
+          if (isCleanedUp) return; // Stop polling after cleanup
           var gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
           var gp = gamepads[0] || gamepads[1];
           if (gp) {
@@ -1018,6 +1092,7 @@
             if (gp.buttons[1] && gp.buttons[1].pressed && !lastButtons['btn1']) {
               lastButtons['btn1'] = true;
               if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
+              cleanupAll();
               location.href = 'index.html';
             } else if (gp.buttons[1] && !gp.buttons[1].pressed) {
               lastButtons['btn1'] = false;
@@ -1031,9 +1106,9 @@
               lastButtons['btn2'] = false;
             }
           }
-          requestAnimationFrame(pollGamepad);
+          animFrameId = requestAnimationFrame(pollGamepad);
         }
-        requestAnimationFrame(pollGamepad);
+        animFrameId = requestAnimationFrame(pollGamepad);
 
       })();
     </script>
