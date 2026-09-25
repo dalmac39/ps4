@@ -453,34 +453,6 @@
         margin-bottom: 14px;
       }
 
-      .auto-close-box {
-        background: rgba(0, 229, 255, 0.08);
-        border: 1px solid rgba(0, 229, 255, 0.35);
-        border-radius: 8px;
-        padding: 8px 12px;
-        margin-bottom: 14px;
-      }
-
-      .auto-close-text {
-        font-size: 12px;
-        font-weight: 700;
-        color: #ffb070;
-        margin-bottom: 6px;
-      }
-
-      .close-bar-wrap {
-        width: 100%;
-        height: 4px;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 4px;
-        overflow: hidden;
-      }
-
-      .close-bar {
-        height: 100%;
-        width: 100%;
-        background: var(--neon-cyan);
-      }
 
       .hud-btn-group {
         display: flex;
@@ -743,28 +715,16 @@
             </div>
           </div>
 
-          <!-- Done Success Panel with Auto-Close PS4 Browser -->
+          <!-- Done Success Panel -->
           <div class="hud-done-card" id="hud-done-card">
             <h2 class="hud-done-msg">✓ تم تفعيل وتشغيل GoldHEN بنجاح!</h2>
             <p class="hud-done-sub">
               تم تطبيق الترقيع وتثبيت الحمولة بنجاح على نظام PS4.<br>
-              يمكنك الآن الاستمتاع بكافة الألعاب ومميزات النظام.
+              اضغط الآن على زر <strong>PS</strong> في يد التحكم للخروج وبدء اللعب.
             </p>
 
-            <!-- Auto-Close Countdown Box -->
-            <div class="auto-close-box" id="auto-close-box">
-              <div class="auto-close-text" id="auto-close-text">
-                جاري إغلاق الصفحة تلقائياً خلال <span id="auto-close-sec" style="color:#00e5ff; font-weight:900;">3</span> ثوانٍ...
-              </div>
-              <div class="close-bar-wrap">
-                <div class="close-bar" id="close-bar"></div>
-              </div>
-            </div>
-
             <div class="hud-btn-group">
-              <button type="button" class="btn-cyber primary" id="btn-close-now">إغلاق الصفحة الآن (زر PS)</button>
-              <button type="button" class="btn-cyber secondary" id="btn-cancel-close">إلغاء الإغلاق</button>
-              <a href="index.html" class="btn-cyber secondary">الرئيسية</a>
+              <a href="index.html" class="btn-cyber primary">العودة للرئيسية</a>
             </div>
           </div>
 
@@ -843,44 +803,15 @@
           setTimeout(function() { playTone(180, 0.3, 'sawtooth'); }, 180);
         }
 
-        // PS4 Browser Page-Close Functionality
-        // Instead of window.close() which kills the entire PS4 browser app,
-        // navigate to about:blank to just close the page and stay in the browser.
-        function closePs4Browser() {
-          try {
-            // Clean up all running timers, animations, and audio first
-            cleanupAll();
-            // Navigate to blank page — this closes the JB page 
-            // without exiting the PS4 browser application entirely.
-            // The user can then press the PS button to go back to their game.
-            window.location.replace('about:blank');
-          } catch(e) {
-            // Fallback: try navigating to the home page
-            try { window.location.href = 'index.html'; } catch(e2) {}
-          }
-        }
-
-        var closeSec = 3;
-        var closeTimer = null;
-        var closeBarEl = document.getElementById('close-bar');
-        var closeSecEl = document.getElementById('auto-close-sec');
-        var closeTextEl = document.getElementById('auto-close-text');
-        var btnCloseNow = document.getElementById('btn-close-now');
-        var btnCancelClose = document.getElementById('btn-cancel-close');
-
         // ---- Freeze Prevention: Cleanup all resources ----
         // This prevents the PS4 from freezing when entering rest mode,
         // shutting down, or when the browser is suspended by the system.
-        var allTimers = [];
         var animFrameId = null;
         var isCleanedUp = false;
 
         function cleanupAll() {
           if (isCleanedUp) return;
           isCleanedUp = true;
-
-          // Stop auto-close timer
-          if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
 
           // Stop all stage progression timers
           if (typeof timer1 !== 'undefined') clearTimeout(timer1);
@@ -932,39 +863,6 @@
           document.addEventListener('freeze', function() {
             cleanupAll();
           }, false);
-        }
-
-        function startAutoCloseTimer() {
-          closeSec = 3;
-          if (closeBarEl) {
-            closeBarEl.style.transition = 'width 3s linear';
-            setTimeout(function() { closeBarEl.style.width = '0%'; }, 50);
-          }
-
-          closeTimer = setInterval(function() {
-            closeSec--;
-            if (closeSecEl) closeSecEl.textContent = closeSec;
-            if (closeSec <= 0) {
-              clearInterval(closeTimer);
-              closeTimer = null;
-              closePs4Browser();
-            }
-          }, 1000);
-        }
-
-        if (btnCloseNow) {
-          btnCloseNow.addEventListener('click', function() {
-            if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
-            closePs4Browser();
-          });
-        }
-
-        if (btnCancelClose) {
-          btnCancelClose.addEventListener('click', function() {
-            if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
-            if (closeTextEl) closeTextEl.textContent = 'تم إلغاء الإغلاق التلقائي. اضغط زر PS للخروج واللعب.';
-            if (closeBarEl) closeBarEl.style.display = 'none';
-          });
         }
 
         // Animated stage progression during exploit execution
@@ -1046,7 +944,10 @@
             }
 
             sfxSuccessFanfare();
-            startAutoCloseTimer();
+            // Automatically clean up heavy background processes after fanfare to prevent PS4 freezing during rest mode or shutdown
+            setTimeout(function() {
+              cleanupAll();
+            }, 1200);
           } else if (isFail) {
             finished = true;
             clearTimeout(timer1);
@@ -1079,19 +980,17 @@
           var gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
           var gp = gamepads[0] || gamepads[1];
           if (gp) {
-            // Button 0 (Cross ✕): Close browser if done, or retry if failed
+            // Button 0 (Cross ✕): Retry if failed
             if (gp.buttons[0] && gp.buttons[0].pressed && !lastButtons['btn0']) {
               lastButtons['btn0'] = true;
               if (document.body.classList.contains('fail')) location.reload();
-              else if (document.body.classList.contains('done')) closePs4Browser();
             } else if (gp.buttons[0] && !gp.buttons[0].pressed) {
               lastButtons['btn0'] = false;
             }
 
-            // Button 1 (Circle ◯): Cancel auto-close or return home
+            // Button 1 (Circle ◯): Return home
             if (gp.buttons[1] && gp.buttons[1].pressed && !lastButtons['btn1']) {
               lastButtons['btn1'] = true;
-              if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
               cleanupAll();
               location.href = 'index.html';
             } else if (gp.buttons[1] && !gp.buttons[1].pressed) {
