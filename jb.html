@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="ar" dir="rtl" manifest="cache.appcache">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>DALMAC PS4 — GoldHEN Cyber HUD</title>
+    <link rel="icon" type="image/jpeg" href="assets/branding/dalmac-logo.jpg" />
+    <link rel="apple-touch-icon" href="assets/branding/dalmac-logo.jpg" />
+    <style>
+      :root {
+        --bg-dark: #06080c;
+        --neon-cyan: #00e5ff;
+        --neon-cyan-glow: rgba(0, 229, 255, 0.45);
+        --neon-green: #2ecc71;
+        --neon-green-glow: rgba(46, 204, 113, 0.5);
+        --neon-orange: #ff9100;
+        --neon-orange-glow: rgba(255, 145, 0, 0.45);
+        --neon-red: #ff3344;
+        --hud-border: rgba(0, 229, 255, 0.35);
+        --hud-bg: rgba(8, 14, 24, 0.92);
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: var(--bg-dark) url('assets/background/dalmac-background.png') center/cover no-repeat fixed;
+        color: #e2e8f0;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        overflow: hidden;
+        position: relative;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+      }
+
+      /* Ambient Cyber Overlay */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 65% 50%, rgba(0, 160, 255, 0.12), transparent 70%),
+                    radial-gradient(circle at 20% 70%, rgba(255, 145, 0, 0.08), transparent 60%),
+                    rgba(4, 7, 12, 0.82);
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* Top Cyber Bar */
+      .cyber-nav {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 48px;
+        padding: 0 24px;
+        background: rgba(8, 12, 20, 0.94);
+        border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+      }
+
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .nav-logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--neon-cyan);
+        box-shadow: 0 0 8px var(--neon-cyan-glow);
+      }
+
+      .nav-title {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: #ffffff;
+      }
+
+      .nav-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 12px;
+        border-radius: 50px;
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid var(--neon-cyan);
+        color: var(--neon-cyan);
+      }
+
+      /* Main Stage Container (Fixed 1080p PS4 TV Viewport) */
+      .stage-container {
+        position: relative;
+        z-index: 5;
+        max-width: 1280px;
+        height: calc(100vh - 48px);
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 36px;
+        padding: 12px 24px;
+      }
+
+      /* Left Mascot Column */
+      .mascot-col {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        animation: floatMascot 4s ease-in-out infinite;
+      }
+
+      @keyframes floatMascot {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-8px); }
+      }
+
+      .mascot-card {
+        width: 280px;
+        height: 380px;
+        border-radius: 20px;
+        padding: 10px;
+        background: radial-gradient(circle, rgba(0, 229, 255, 0.14) 0%, rgba(6, 12, 22, 0.8) 75%);
+        border: 1px solid rgba(0, 229, 255, 0.35);
+        box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mascot-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 14px;
+        display: block;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.7));
+      }
+
+      .mascot-tag {
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #ff9100;
+        background: rgba(255, 145, 0, 0.12);
+        border: 1px solid rgba(255, 145, 0, 0.4);
+        padding: 4px 14px;
+        border-radius: 50px;
+      }
+
+      /* Right Holographic HUD Window */
+      .hud-col {
+        flex: 1 1 540px;
+        max-width: 580px;
+      }
+
+      .cyber-hud-window {
+        position: relative;
+        background: var(--hud-bg);
+        border: 1.5px solid var(--hud-border);
+        border-radius: 16px;
+        padding: 22px 26px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 25px rgba(0, 229, 255, 0.18);
+        overflow: hidden;
+      }
+
+      /* Sci-fi Notched Tech Corners */
+      .cyber-hud-window::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 16px;
+        height: 16px;
+        border-top: 3px solid var(--neon-cyan);
+        border-left: 3px solid var(--neon-cyan);
+      }
+      .cyber-hud-window::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 16px;
+        height: 16px;
+        border-bottom: 3px solid var(--neon-cyan);
+        border-right: 3px solid var(--neon-cyan);
+      }
+
+      /* Holographic Header */
+      .hud-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(0, 229, 255, 0.18);
+      }
+
+      .hud-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Futuristic Glowing Lock */
+      .lock-portal {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(0, 229, 255, 0.1);
+        border: 2px solid var(--neon-cyan);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 0 16px var(--neon-cyan-glow);
+        animation: lockPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes lockPulse {
+        0%, 100% { box-shadow: 0 0 14px var(--neon-cyan-glow); transform: scale(1); }
+        50%      { box-shadow: 0 0 24px rgba(0, 229, 255, 0.7); transform: scale(1.05); }
+      }
+
+      .hud-title-block h1 {
+        font-size: 21px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        color: #ffffff;
+        text-transform: uppercase;
+        text-shadow: 0 0 12px var(--neon-cyan-glow);
+        margin: 0;
+      }
+
+      .hud-title-block .hud-sub {
+        font-size: 11px;
+        color: var(--neon-cyan);
+        letter-spacing: 0.06em;
+        font-family: Consolas, monospace;
+        margin-top: 2px;
+      }
+
+      .tech-gear {
+        font-size: 20px;
+        color: rgba(0, 229, 255, 0.6);
+        animation: spinGear 6s linear infinite;
+      }
+
+      @keyframes spinGear {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Cyber Scanning Progress Bar */
+      .progress-section {
+        margin-bottom: 18px;
+      }
+
+      .progress-label-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-family: Consolas, monospace;
+      }
+
+      .progress-state-text {
+        color: #ffffff;
+        font-weight: 700;
+      }
+
+      .progress-percent {
+        color: var(--neon-cyan);
+        font-weight: 800;
+      }
+
+      .cyber-progress-track {
+        width: 100%;
+        height: 14px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(0, 229, 255, 0.35);
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+      }
+
+      .cyber-progress-fill {
+        height: 100%;
+        width: 20%;
+        background: repeating-linear-gradient(
+          -45deg,
+          #00d2ff,
+          #00d2ff 10px,
+          #0088cc 10px,
+          #0088cc 20px
+        );
+        box-shadow: 0 0 14px var(--neon-cyan);
+        transition: width 0.5s ease;
+        animation: progressStripeScan 1s linear infinite;
+      }
+
+      @keyframes progressStripeScan {
+        from { background-position: 0 0; }
+        to   { background-position: 40px 0; }
+      }
+
+      /* Holographic Step Checklist */
+      .checklist-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .step-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 12px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      .step-item.active {
+        background: rgba(0, 229, 255, 0.08);
+        border-color: rgba(0, 229, 255, 0.45);
+      }
+
+      .step-item.done {
+        background: rgba(46, 204, 113, 0.08);
+        border-color: rgba(46, 204, 113, 0.4);
+      }
+
+      .step-item.fail {
+        background: rgba(255, 51, 68, 0.1);
+        border-color: rgba(255, 51, 68, 0.45);
+      }
+
+      .step-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .step-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 800;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      .step-item.active .step-icon {
+        border-color: var(--neon-cyan);
+        color: var(--neon-cyan);
+        box-shadow: 0 0 8px var(--neon-cyan);
+        animation: spinStepIcon 1s linear infinite;
+      }
+
+      @keyframes spinStepIcon {
+        to { transform: rotate(360deg); }
+      }
+
+      .step-item.done .step-icon {
+        border-color: var(--neon-green);
+        background: rgba(46, 204, 113, 0.2);
+        color: var(--neon-green);
+        box-shadow: 0 0 8px var(--neon-green);
+        animation: none;
+      }
+
+      .step-item.fail .step-icon {
+        border-color: var(--neon-red);
+        background: rgba(255, 51, 68, 0.2);
+        color: var(--neon-red);
+        animation: none;
+      }
+
+      .step-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .step-desc {
+        font-size: 10.5px;
+        color: #8b96a5;
+        direction: rtl;
+      }
+
+      .step-status-tag {
+        font-size: 10.5px;
+        font-family: Consolas, monospace;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .step-item.active .step-status-tag { color: var(--neon-cyan); }
+      .step-item.done .step-status-tag   { color: var(--neon-green); }
+      .step-item.fail .step-status-tag   { color: var(--neon-red); }
+
+      /* Done Success Panel with Auto-Close Countdown */
+      .hud-done-card, .hud-fail-card {
+        display: none;
+        text-align: center;
+        padding-top: 6px;
+        animation: popInCard 0.4s ease;
+      }
+
+      @keyframes popInCard {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .hud-done-msg {
+        font-size: 15px;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 4px;
+        text-shadow: 0 0 10px var(--neon-green);
+      }
+
+      .hud-done-sub {
+        font-size: 12px;
+        color: #a0aec0;
+        line-height: 1.5;
+        margin-bottom: 14px;
+      }
+
+      .auto-close-box {
+        background: rgba(0, 229, 255, 0.08);
+        border: 1px solid rgba(0, 229, 255, 0.35);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 14px;
+      }
+
+      .auto-close-text {
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffb070;
+        margin-bottom: 6px;
+      }
+
+      .close-bar-wrap {
+        width: 100%;
+        height: 4px;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .close-bar {
+        height: 100%;
+        width: 100%;
+        background: var(--neon-cyan);
+      }
+
+      .hud-btn-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn-cyber {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 18px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 50px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-family: inherit;
+      }
+
+      .btn-cyber.primary {
+        background: linear-gradient(135deg, #00e5ff 0%, #0088cc 100%);
+        color: #060a10;
+        box-shadow: 0 4px 14px rgba(0, 229, 255, 0.4);
+      }
+
+      .btn-cyber.primary:hover, .btn-cyber.primary:focus-visible {
+        transform: scale(1.03);
+        box-shadow: 0 6px 18px rgba(0, 229, 255, 0.6);
+        outline: none;
+      }
+
+      .btn-cyber.secondary {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #cbd5e0;
+      }
+
+      .btn-cyber.secondary:hover, .btn-cyber.secondary:focus-visible {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        outline: none;
+      }
+
+      /* Controller Bottom Prompt Bar */
+      .hud-footer-hints {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 11px;
+        color: #8b96a5;
+      }
+
+      .hint-glyph {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        font-size: 10px;
+        font-weight: 900;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #00e5ff;
+        margin-inline-end: 4px;
+      }
+
+      /* Body state overrides controlled by jb.js */
+      body.done .hud-done-card { display: block; }
+      body.done .checklist-group { display: none; }
+      body.done .lock-portal {
+        border-color: var(--neon-green);
+        box-shadow: 0 0 25px var(--neon-green);
+        background: rgba(46, 204, 113, 0.15);
+      }
+      body.done .cyber-progress-fill {
+        width: 100% !important;
+        background: var(--neon-green) !important;
+        box-shadow: 0 0 14px var(--neon-green);
+        animation: none;
+      }
+
+      body.fail .hud-fail-card { display: block; }
+      body.fail .lock-portal {
+        border-color: var(--neon-red);
+        box-shadow: 0 0 25px var(--neon-red);
+        background: rgba(255, 51, 68, 0.15);
+      }
+
+      /* ?log=1 Step log container */
+      #wrap { position: relative; z-index: 10; padding: 0; }
+      #state, #out { display: none; }
+      body.log .stage-container { display: none !important; }
+      body.log #wrap { padding: 16px 20px; direction: ltr; text-align: left; }
+      body.log #state { display: block; font-size: 20px; font-weight: 700; margin: 0 0 10px; color: var(--neon-cyan); }
+      body.log #out {
+        display: block;
+        white-space: pre-wrap;
+        font: 12px/1.5 Consolas, monospace;
+        background: rgba(10, 14, 20, 0.94);
+        border: 1px solid rgba(0, 229, 255, 0.25);
+        border-radius: 8px;
+        padding: 12px 14px;
+        height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
+
+      .ok     { color: #2ecc71; }
+      .bad    { color: #e74c3c; }
+      .warn   { color: #f1c40f; }
+      .safe   { color: #2ecc71; }
+      .danger { color: #e74c3c; }
+      code    { color: #9fb3d0; }
+
+      /* Legacy fallback */
+      #msg { display: none; }
+
+      /* Responsive Layout Adjustments */
+      @media (max-width: 860px) {
+        body { overflow-y: auto; }
+        .stage-container {
+          flex-direction: column;
+          height: auto;
+          min-height: calc(100vh - 48px);
+          gap: 20px;
+          padding: 16px 12px 30px;
+        }
+        .mascot-card { width: 220px; height: 280px; }
+        .cyber-hud-window { padding: 18px 16px; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Cyber Header Nav -->
+    <header class="cyber-nav">
+      <div class="nav-brand">
+        <img src="assets/branding/dalmac-logo.jpg" alt="DALMAC" class="nav-logo">
+        <span class="nav-title">DALMAC PS4 GOLDHEN INJECTOR</span>
+      </div>
+      <div class="nav-badge" id="nav-fw-badge">
+        <span>FW: 13.52</span>
+        <span>•</span>
+        <span>OFFLINE</span>
+      </div>
+    </header>
+
+    <!-- Main Stage -->
+    <main class="stage-container">
+
+      <!-- Left Mascot Column -->
+      <section class="mascot-col">
+        <div class="mascot-card">
+          <img src="assets/branding/dalmac-mascot.jpg" alt="DALMAC Mascot" class="mascot-img">
+        </div>
+        <div class="mascot-tag">
+          <span>🎮</span>
+          <span>DALMAC CYBER OPERATOR</span>
+        </div>
+      </section>
+
+      <!-- Right Cyber HUD Window -->
+      <section class="hud-col">
+        <div class="cyber-hud-window">
+
+          <!-- Holographic HUD Header -->
+          <div class="hud-header">
+            <div class="hud-header-left">
+              <div class="lock-portal" id="hud-lock" aria-label="Security Status">
+                <span id="lock-icon">🔒</span>
+              </div>
+              <div class="hud-title-block">
+                <h1 id="hud-status-title">JAILBREAK...</h1>
+                <div class="hud-sub">SYS_STATE: <span id="hud-sys-state">TRIGGERING EXPLOIT</span></div>
+              </div>
+            </div>
+            <div class="tech-gear" aria-hidden="true">⚙️</div>
+          </div>
+
+          <!-- Cyber Progress Bar -->
+          <div class="progress-section">
+            <div class="progress-label-bar">
+              <span class="progress-state-text" id="progress-state-text">STAGE 1 / 5</span>
+              <span class="progress-percent" id="progress-percent">20%</span>
+            </div>
+            <div class="cyber-progress-track">
+              <div class="cyber-progress-fill" id="cyber-progress-fill"></div>
+            </div>
+          </div>
+
+          <!-- Holographic Step Checklist -->
+          <div class="checklist-group" id="checklist-group">
+            <!-- Step 1: Exploit -->
+            <div class="step-item active" id="step-1">
+              <div class="step-left">
+                <span class="step-icon">⚡</span>
+                <div>
+                  <div class="step-title">Exploit WebKit</div>
+                  <div class="step-desc">تهيئة ثغرة الويب كيت ورش الذاكرة</div>
+                </div>
+              </div>
+              <span class="step-status-tag" id="tag-step-1">RUNNING</span>
+            </div>
+
+            <!-- Step 2: Loading -->
+            <div class="step-item" id="step-2">
+              <div class="step-left">
+                <span class="step-icon">📦</span>
+                <div>
+                  <div class="step-title">Loading Tables</div>
+                  <div class="step-desc">قراءة وتحميل جداول نواة النظام</div>
+                </div>
+              </div>
+              <span class="step-status-tag" id="tag-step-2">PENDING</span>
+            </div>
+
+            <!-- Step 3: Patching -->
+            <div class="step-item" id="step-3">
+              <div class="step-left">
+                <span class="step-icon">🛡️</span>
+                <div>
+                  <div class="step-title">Kernel Patching</div>
+                  <div class="step-desc">تطبيق ترقيع الكيرنل وتجاوز الحماية</div>
+                </div>
+              </div>
+              <span class="step-status-tag" id="tag-step-3">PENDING</span>
+            </div>
+
+            <!-- Step 4: Jailbreak -->
+            <div class="step-item" id="step-4">
+              <div class="step-left">
+                <span class="step-icon">🚀</span>
+                <div>
+                  <div class="step-title">GoldHEN Payload</div>
+                  <div class="step-desc">حقن وتشغيل حمولة جولد هين بالذاكرة</div>
+                </div>
+              </div>
+              <span class="step-status-tag" id="tag-step-4">PENDING</span>
+            </div>
+
+            <!-- Step 5: Success -->
+            <div class="step-item" id="step-5">
+              <div class="step-left">
+                <span class="step-icon">✓</span>
+                <div>
+                  <div class="step-title">Execution Ready</div>
+                  <div class="step-desc">اكتمال كسر الحماية وتفعيل الصلاحيات</div>
+                </div>
+              </div>
+              <span class="step-status-tag" id="tag-step-5">PENDING</span>
+            </div>
+          </div>
+
+          <!-- Done Success Panel with Auto-Close PS4 Browser -->
+          <div class="hud-done-card" id="hud-done-card">
+            <h2 class="hud-done-msg">✓ تم تفعيل وتشغيل GoldHEN بنجاح!</h2>
+            <p class="hud-done-sub">
+              تم تطبيق الترقيع وتثبيت الحمولة بنجاح على نظام PS4.<br>
+              يمكنك الآن الاستمتاع بكافة الألعاب ومميزات النظام.
+            </p>
+
+            <!-- Auto-Close Countdown Box -->
+            <div class="auto-close-box" id="auto-close-box">
+              <div class="auto-close-text" id="auto-close-text">
+                جاري إغلاق المتصفح تلقائياً خلال <span id="auto-close-sec" style="color:#00e5ff; font-weight:900;">3</span> ثوانٍ...
+              </div>
+              <div class="close-bar-wrap">
+                <div class="close-bar" id="close-bar"></div>
+              </div>
+            </div>
+
+            <div class="hud-btn-group">
+              <button type="button" class="btn-cyber primary" id="btn-close-now">إغلاق المتصفح الآن (زر PS)</button>
+              <button type="button" class="btn-cyber secondary" id="btn-cancel-close">إلغاء الإغلاق</button>
+              <a href="index.html" class="btn-cyber secondary">الرئيسية</a>
+            </div>
+          </div>
+
+          <!-- Fail Error Panel -->
+          <div class="hud-fail-card" id="hud-fail-card">
+            <h2 class="hud-done-msg" style="color: #ff5566; text-shadow: 0 0 10px var(--neon-red);">⚠️ تعذر إكمال كسر الحماية</h2>
+            <p class="hud-done-sub">
+              حدث تعارض أثناء تنفيذ ترقيع الكيرنل.<br>
+              يرجى إعادة تشغيل جهاز PlayStation 4 ثم المحاولة مرة أخرى.
+            </p>
+            <div class="hud-btn-group">
+              <button type="button" class="btn-cyber primary" onclick="location.reload();">إعادة المحاولة / Retry</button>
+              <a href="jb.html?log=1" class="btn-cyber secondary">عرض سجل الخطوات</a>
+            </div>
+          </div>
+
+          <!-- PS4 DualShock Controller Hints -->
+          <div class="hud-footer-hints">
+            <span><span class="hint-glyph">✕</span> تأكيد / خروج</span>
+            <span><span class="hint-glyph">◯</span> رجوع</span>
+            <span><span class="hint-glyph">□</span> السجل</span>
+          </div>
+
+        </div><!-- /.cyber-hud-window -->
+      </section>
+
+    </main>
+
+    <!-- Legacy msg for jb.js fallback -->
+    <div id="msg">Restart your console</div>
+
+    <!-- ?log=1 Step Log Container -->
+    <div id="wrap">
+      <div id="state"></div>
+      <div id="out"></div>
+    </div>
+
+    <!-- Interactive Animation, Sound & Auto-Close Logic -->
+    <script>
+      (function() {
+        'use strict';
+
+        var query = new URLSearchParams(window.location.search);
+        var fw = query.get('fw') || '13.52';
+        var elNavBadge = document.getElementById('nav-fw-badge');
+        if (elNavBadge) elNavBadge.innerHTML = '<span>FW: ' + fw + '</span> <span>•</span> <span>OFFLINE</span>';
+
+        // Web Audio Synthesizer (Zero-file dependency, 100% offline)
+        var audioCtx = null;
+        function playTone(freq, dur, type) {
+          try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            var osc = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+          } catch(e) {}
+        }
+
+        function sfxTick() { playTone(540, 0.04, 'triangle'); }
+        function sfxSuccessFanfare() {
+          playTone(523, 0.09);
+          setTimeout(function() { playTone(659, 0.1); }, 90);
+          setTimeout(function() { playTone(784, 0.16); }, 200);
+          setTimeout(function() { playTone(1046, 0.3); }, 340);
+        }
+        function sfxFailTone() {
+          playTone(260, 0.2, 'sawtooth');
+          setTimeout(function() { playTone(180, 0.3, 'sawtooth'); }, 180);
+        }
+
+        // PS4 Browser Auto-Close Functionality
+        function closePs4Browser() {
+          try {
+            // Closes User's Guide (دليل المستخدم) or Web Browser on PS4
+            window.close();
+            window.open('', '_self', '');
+            window.close();
+          } catch(e) {}
+        }
+
+        var closeSec = 3;
+        var closeTimer = null;
+        var closeBarEl = document.getElementById('close-bar');
+        var closeSecEl = document.getElementById('auto-close-sec');
+        var closeTextEl = document.getElementById('auto-close-text');
+        var btnCloseNow = document.getElementById('btn-close-now');
+        var btnCancelClose = document.getElementById('btn-cancel-close');
+
+        function startAutoCloseTimer() {
+          closeSec = 3;
+          if (closeBarEl) {
+            closeBarEl.style.transition = 'width 3s linear';
+            setTimeout(function() { closeBarEl.style.width = '0%'; }, 50);
+          }
+
+          closeTimer = setInterval(function() {
+            closeSec--;
+            if (closeSecEl) closeSecEl.textContent = closeSec;
+            if (closeSec <= 0) {
+              clearInterval(closeTimer);
+              closeTimer = null;
+              closePs4Browser();
+            }
+          }, 1000);
+        }
+
+        if (btnCloseNow) {
+          btnCloseNow.addEventListener('click', function() {
+            if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
+            closePs4Browser();
+          });
+        }
+
+        if (btnCancelClose) {
+          btnCancelClose.addEventListener('click', function() {
+            if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
+            if (closeTextEl) closeTextEl.textContent = 'تم إلغاء الإغلاق التلقائي. اضغط زر PS للخروج واللعب.';
+            if (closeBarEl) closeBarEl.style.display = 'none';
+          });
+        }
+
+        // Animated stage progression during exploit execution
+        var currentStep = 1;
+        var elFill = document.getElementById('cyber-progress-fill');
+        var elPercent = document.getElementById('progress-percent');
+        var elStateText = document.getElementById('progress-state-text');
+        var elSysState = document.getElementById('hud-sys-state');
+        var elLockIcon = document.getElementById('lock-icon');
+        var elStatusTitle = document.getElementById('hud-status-title');
+
+        var stages = [
+          { num: 1, title: 'EXPLOIT...', percent: '20%', sys: 'TRIGGERING WEBKIT EXPLOIT' },
+          { num: 2, title: 'LOADING...', percent: '45%', sys: 'READING KERNEL RVA TABLES' },
+          { num: 3, title: 'PATCHING...', percent: '70%', sys: 'APPLYING KERNEL SYSENT PATCH' },
+          { num: 4, title: 'JAILBREAK...', percent: '90%', sys: 'INJECTING GOLDHEN PAYLOAD' },
+          { num: 5, title: 'SUCCESS !', percent: '100%', sys: 'GOLDHEN ACTIVE & ARMED' }
+        ];
+
+        function advanceStep(s) {
+          if (s > 4) return;
+          currentStep = s;
+          var st = stages[s - 1];
+
+          if (elFill) elFill.style.width = st.percent;
+          if (elPercent) elPercent.textContent = st.percent;
+          if (elStateText) elStateText.textContent = 'STAGE ' + s + ' / 5';
+          if (elSysState) elSysState.textContent = st.sys;
+          if (elStatusTitle) elStatusTitle.textContent = st.title;
+
+          for (var i = 1; i <= 5; i++) {
+            var item = document.getElementById('step-' + i);
+            var tag = document.getElementById('tag-step-' + i);
+            if (!item || !tag) continue;
+
+            if (i < s) {
+              item.className = 'step-item done';
+              tag.textContent = 'DONE';
+            } else if (i === s) {
+              item.className = 'step-item active';
+              tag.textContent = 'RUNNING';
+            } else {
+              item.className = 'step-item';
+              tag.textContent = 'PENDING';
+            }
+          }
+          sfxTick();
+        }
+
+        var timer1 = setTimeout(function() { advanceStep(2); }, 1100);
+        var timer2 = setTimeout(function() { advanceStep(3); }, 2200);
+        var timer3 = setTimeout(function() { advanceStep(4); }, 3300);
+
+        // Observer to detect body.done or body.fail set by jb.js
+        var finished = false;
+        var observer = new MutationObserver(function() {
+          if (finished) return;
+          var isDone = document.body.classList.contains('done');
+          var isFail = document.body.classList.contains('fail');
+
+          if (isDone) {
+            finished = true;
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            clearTimeout(timer3);
+
+            if (elFill) elFill.style.width = '100%';
+            if (elPercent) elPercent.textContent = '100%';
+            if (elStateText) elStateText.textContent = 'COMPLETED';
+            if (elSysState) elSysState.textContent = 'ALL STAGES ARMED (PASS)';
+            if (elStatusTitle) elStatusTitle.textContent = 'SUCCESS !';
+            if (elLockIcon) elLockIcon.textContent = '🔓';
+
+            for (var i = 1; i <= 5; i++) {
+              var item = document.getElementById('step-' + i);
+              var tag = document.getElementById('tag-step-' + i);
+              if (item) item.className = 'step-item done';
+              if (tag) tag.textContent = 'DONE';
+            }
+
+            sfxSuccessFanfare();
+            startAutoCloseTimer();
+          } else if (isFail) {
+            finished = true;
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            clearTimeout(timer3);
+
+            if (elFill) {
+              elFill.style.background = 'var(--neon-red)';
+              elFill.style.boxShadow = '0 0 16px var(--neon-red)';
+            }
+            if (elStateText) elStateText.textContent = 'FAILED';
+            if (elSysState) elSysState.textContent = 'KERNEL EXPLOIT INTERRUPTED';
+            if (elStatusTitle) elStatusTitle.textContent = 'FAILED';
+
+            var activeItem = document.getElementById('step-' + currentStep);
+            var activeTag = document.getElementById('tag-step-' + currentStep);
+            if (activeItem) activeItem.className = 'step-item fail';
+            if (activeTag) activeTag.textContent = 'ERROR';
+
+            sfxFailTone();
+          }
+        });
+
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+        // DualShock 4 Controller Input in Execution Window
+        var lastButtons = {};
+        function pollGamepad() {
+          var gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+          var gp = gamepads[0] || gamepads[1];
+          if (gp) {
+            // Button 0 (Cross ✕): Close browser if done, or retry if failed
+            if (gp.buttons[0] && gp.buttons[0].pressed && !lastButtons['btn0']) {
+              lastButtons['btn0'] = true;
+              if (document.body.classList.contains('fail')) location.reload();
+              else if (document.body.classList.contains('done')) closePs4Browser();
+            } else if (gp.buttons[0] && !gp.buttons[0].pressed) {
+              lastButtons['btn0'] = false;
+            }
+
+            // Button 1 (Circle ◯): Cancel auto-close or return home
+            if (gp.buttons[1] && gp.buttons[1].pressed && !lastButtons['btn1']) {
+              lastButtons['btn1'] = true;
+              if (closeTimer) { clearInterval(closeTimer); closeTimer = null; }
+              location.href = 'index.html';
+            } else if (gp.buttons[1] && !gp.buttons[1].pressed) {
+              lastButtons['btn1'] = false;
+            }
+
+            // Button 2 (Square □): View Step Log (?log=1)
+            if (gp.buttons[2] && gp.buttons[2].pressed && !lastButtons['btn2']) {
+              lastButtons['btn2'] = true;
+              location.href = 'jb.html?log=1&fw=' + encodeURIComponent(fw);
+            } else if (gp.buttons[2] && !gp.buttons[2].pressed) {
+              lastButtons['btn2'] = false;
+            }
+          }
+          requestAnimationFrame(pollGamepad);
+        }
+        requestAnimationFrame(pollGamepad);
+
+      })();
+    </script>
+
+    <!-- Core Jailbreak Engine Module -->
+    <script type="module">
+      import "./jb.js?v=10";
+    </script>
+  </body>
+</html>

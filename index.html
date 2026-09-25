@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" manifest="cache.appcache">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080a0d">
+  <meta name="description" content="DALMAC PS4 Offline Edition — المضيف غير المتصل">
+  <title>DALMAC PS4</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="assets/branding/dalmac-logo.jpg">
+  <link rel="apple-touch-icon" href="assets/branding/dalmac-logo.jpg">
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+
+  <!-- Full-screen Background -->
+  <div class="dalmac-bg" aria-hidden="true"></div>
+
+  <!-- Main UI -->
+  <main class="dalmac-main">
+    <div class="dalmac-card">
+
+      <!-- Card Utility Bar -->
+      <div class="card-header-bar">
+        <div class="gamepad-badge" id="gamepad-badge" style="display: none;">
+          <span class="gp-dot" aria-hidden="true"></span>
+          <span id="gp-label">يد التحكم متصلة</span>
+        </div>
+        <button class="sound-toggle" id="sound-toggle" type="button" title="كتم/تشغيل الصوت | Toggle Sound" aria-label="Toggle Sound">
+          <span id="sound-icon">🔊</span>
+        </button>
+      </div>
+
+      <!-- DALMAC Logo -->
+      <img
+        src="assets/branding/dalmac-logo.jpg"
+        alt="DALMAC Logo"
+        class="dalmac-logo"
+        width="130"
+        height="130"
+      >
+
+      <!-- Title Block -->
+      <h1 class="dalmac-title" id="dalmac-title">DALMAC PS4</h1>
+      <div class="dalmac-subtitle" id="dalmac-subtitle">الإصدار غير المتصل</div>
+
+      <!-- Firmware Status Badge -->
+      <div class="fw-badge experimental" id="fw-badge">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="fw-badge-label">إصدار النظام: 13.52</span>
+        <span class="badge-sep">—</span>
+        <span id="fw-badge-status">تجريبي</span>
+      </div>
+
+      <!-- PS4 Dedicated Offline Cache Box -->
+      <div class="ps4-cache-box" id="ps4-cache-box">
+        <div class="cache-box-header">
+          <div class="cache-box-left">
+            <span class="cache-icon" id="cache-box-icon">💾</span>
+            <span class="cache-header-title" id="cache-box-title">كاش PS4 أوفلاين:</span>
+          </div>
+          <span class="cache-badge" id="cache-box-badge">جاهز أوفلاين</span>
+        </div>
+        <div class="cache-progress-container" id="cache-progress-wrap" style="display: none;">
+          <div class="cache-progress-bar" id="cache-progress-bar"></div>
+        </div>
+        <div class="cache-detail-msg" id="cache-detail-msg">تم حفظ كافة ملفات الهوست محلياً. جاهز للتشغيل بدون إنترنت.</div>
+      </div>
+
+      <!-- Quick Firmware Selector Pills -->
+      <div class="fw-selector-wrap">
+        <div class="selector-label" id="lbl-fw-select">إصدارات النظام المدعومة / Target Firmware:</div>
+        <div class="fw-pills" id="fw-pills">
+          <button type="button" class="fw-pill active" data-fw="13.52">13.52</button>
+          <button type="button" class="fw-pill" data-fw="13.50">13.50</button>
+          <button type="button" class="fw-pill" data-fw="13.04">13.04</button>
+          <button type="button" class="fw-pill" data-fw="13.02">13.02</button>
+        </div>
+      </div>
+
+      <!-- Alert Banner (hidden by default) -->
+      <div class="dalmac-alert" id="dalmac-alert" role="alert" style="display: none;">
+        <span class="alert-icon" aria-hidden="true">⚠️</span>
+        <span class="alert-text" id="alert-text"></span>
+      </div>
+
+      <!-- Auto-Launch Countdown Card (hidden by default) -->
+      <div class="countdown-card" id="countdown-card" style="display: none;">
+        <div class="countdown-msg" id="countdown-msg">جاري التشغيل التلقائي خلال <span id="countdown-sec">3</span> ثوانٍ...</div>
+        <div class="countdown-bar-wrap"><div class="countdown-bar" id="countdown-bar"></div></div>
+        <button type="button" class="btn-cancel" id="btn-cancel-countdown">إلغاء / Cancel</button>
+      </div>
+
+      <!-- Action Button -->
+      <div class="action-wrap">
+        <button class="btn-start" id="btn-start" type="button">بدء التشغيل</button>
+      </div>
+
+      <!-- Advanced Options Toggle -->
+      <div class="advanced-wrap">
+        <button class="adv-toggle" id="adv-toggle" type="button" aria-expanded="false">
+          <span id="adv-toggle-text">⚙️ خيارات متقدمة</span>
+          <span class="adv-arrow" aria-hidden="true">▼</span>
+        </button>
+        <div class="adv-panel" id="adv-panel">
+          <label class="setting-row">
+            <span class="setting-text" id="lbl-opt-log">وضع السجل المفصل (?log=1)</span>
+            <input type="checkbox" id="opt-debug-log" class="toggle-input">
+          </label>
+          <label class="setting-row">
+            <span class="setting-text" id="lbl-opt-auto">تشغيل تلقائي خلال 3 ثوانٍ</span>
+            <input type="checkbox" id="opt-auto-launch" class="toggle-input">
+          </label>
+        </div>
+      </div>
+
+      <!-- System & Configuration Grid -->
+      <div class="status-grid">
+        <!-- Detected Firmware -->
+        <div class="status-item">
+          <span class="status-label" id="lbl-detected-fw">إصدار النظام المكتشف</span>
+          <span class="status-value mono" id="val-detected-fw">13.52</span>
+        </div>
+
+        <!-- Configuration -->
+        <div class="status-item">
+          <span class="status-label" id="lbl-config-fw">الإعدادات</span>
+          <span class="status-value mono" id="val-config-fw">13.52</span>
+        </div>
+
+        <!-- Kernel Patch -->
+        <div class="status-item">
+          <span class="status-label" id="lbl-patch">ملف الترقيع</span>
+          <span class="status-value mono" id="val-patch">1352.bin</span>
+        </div>
+
+        <!-- Payload -->
+        <div class="status-item">
+          <span class="status-label" id="lbl-payload">الحمولة</span>
+          <span class="status-value mono" id="val-payload">goldhen.bin</span>
+        </div>
+
+        <!-- Application Engine -->
+        <div class="status-item">
+          <span class="status-label" id="lbl-engine">المحرك</span>
+          <span class="status-value ok" id="val-engine">جاهز</span>
+        </div>
+
+        <!-- Offline Storage -->
+        <div class="status-item">
+          <span class="status-label" id="lbl-offline">التخزين غير المتصل</span>
+          <span class="status-value ok" id="val-offline">جاهز</span>
+        </div>
+      </div>
+
+      <!-- Diagnostic Log Toggle -->
+      <button class="log-toggle" id="log-toggle" type="button" aria-expanded="false" aria-controls="log-panel">
+        <span class="log-text">إظهار السجل</span>
+        <span class="arrow" aria-hidden="true">▼</span>
+      </button>
+
+      <!-- Diagnostic Log Panel -->
+      <div class="log-panel" id="log-panel">
+        <div class="log-content" id="log-content" role="log" aria-live="polite"></div>
+      </div>
+
+      <!-- Controller Button Hints -->
+      <div class="controller-hints" id="controller-hints">
+        <span class="hint-item"><span class="btn-glyph cross">✕</span> <span id="hint-start">بدء التشغيل</span></span>
+        <span class="hint-item"><span class="btn-glyph square">□</span> <span id="hint-log">السجل</span></span>
+        <span class="hint-item"><span class="btn-glyph triangle">△</span> <span id="hint-lang">اللغة</span></span>
+      </div>
+
+      <!-- Language Toggle Switch -->
+      <div class="lang-toggle">
+        <button id="lang-ar" class="active" type="button">العربية</button>
+        <span class="sep">|</span>
+        <button id="lang-en" type="button">English</button>
+      </div>
+
+    </div><!-- /.dalmac-card -->
+  </main>
+
+  <!-- Cache Status Banner (Footer) -->
+  <div class="cache-status" id="cache-status"></div>
+
+  <!-- Application Logic (ES Module) -->
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
